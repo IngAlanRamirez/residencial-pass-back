@@ -23,26 +23,63 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Backend de **Residencial Pass**: control de acceso a fraccionamiento por QR. Incluye módulo de autenticación (registro de vecinos, login con deviceId, recuperación de cuenta, registro de vigilantes por admin).
+
+## Requisitos
+
+- Node.js 18+
+- Docker y Docker Compose (para PostgreSQL en desarrollo)
 
 ## Project setup
 
 ```bash
-$ npm install
+npm install
 ```
+
+Copia las variables de entorno y ajusta si es necesario:
+
+```bash
+cp .env.example .env
+```
+
+Levanta PostgreSQL con Docker:
+
+```bash
+docker compose up -d
+```
+
+Crea el primer administrador y las calles por defecto (tras la primera ejecución del backend para que TypeORM cree las tablas):
+
+```bash
+npm run seed
+```
+
+Por defecto el admin queda con teléfono `5550000000` y contraseña `admin123`. El seed también inserta las 9 calles del fraccionamiento si no existe ninguna. Puedes cambiar admin con `SEED_ADMIN_PHONE` y `SEED_ADMIN_PASSWORD`.
 
 ## Compile and run the project
 
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
+
+## API de autenticación
+
+- `POST /auth/register` — Registro de vecino (street, number, letter opcional, phone, password, deviceId). Notifica a admins; la cuenta queda pendiente hasta aprobación.
+- `POST /auth/login` — Login con phone, password y deviceId. Solo el primer dispositivo registrado puede iniciar sesión.
+- `POST /auth/recover-password` — Solicitud de recuperación (phone, newPhone). Notifica a admins y envía link por WhatsApp/SMS al nuevo teléfono (mock en dev).
+- `POST /auth/reset-password` — Reset con token del link + phone, password, deviceId.
+- `POST /users/vigilantes` — Crear vigilante (solo admin, Authorization: Bearer &lt;token&gt;). Body: phone, password.
+- `GET /registration-requests` — Listar solicitudes pendientes (solo admin).
+- `PATCH /registration-requests/:id` — Aprobar o rechazar (solo admin). Body: `{ "status": "approved" }` o `"rejected"`.
+- `GET /streets` — Listar calles (público; para selector en registro de vecinos).
+- `POST /streets` — Agregar calle (solo admin). Body: `{ "name": "San Juan Diego" }`.
 
 ## Run tests
 

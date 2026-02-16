@@ -1,0 +1,41 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
+import {
+  User,
+  Device,
+  RegistrationRequest,
+  RecoveryRequest,
+  Street,
+} from './entities';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRootAsync({
+      useFactory: (config: ConfigService) => {
+        const db = config.get('database');
+        return {
+          type: 'postgres',
+          host: db?.host ?? 'localhost',
+          port: db?.port ?? 5432,
+          username: db?.username ?? 'residencial',
+          password: db?.password ?? 'residencial',
+          database: db?.database ?? 'residencial_pass',
+          entities: [User, Device, RegistrationRequest, RecoveryRequest, Street],
+          synchronize: process.env.NODE_ENV !== 'production',
+          logging: process.env.NODE_ENV === 'development',
+        };
+      },
+      inject: [ConfigService],
+    }),
+    TypeOrmModule.forFeature([
+      User,
+      Device,
+      RegistrationRequest,
+      RecoveryRequest,
+      Street,
+    ]),
+  ],
+  exports: [TypeOrmModule],
+})
+export class DatabaseModule {}
