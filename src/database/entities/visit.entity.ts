@@ -54,6 +54,9 @@ export class Visit {
   @Column({ name: 'scanned_by_exit_id', type: 'uuid', nullable: true })
   scannedByExitId: string | null;
 
+  @Column({ name: 'exit_comment', type: 'text', nullable: true })
+  exitComment: string | null;
+
   @Column()
   street: string;
 

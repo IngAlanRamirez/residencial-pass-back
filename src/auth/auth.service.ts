@@ -121,14 +121,17 @@ export class AuthService {
       throw new UnauthorizedException('Teléfono o contraseña incorrectos');
     }
 
-    const device = await this.usersService.getDeviceByUserId(user.id);
-    if (device && device.deviceId !== dto.deviceId) {
-      throw new ForbiddenException(
-        'Solo puedes iniciar sesión desde el dispositivo registrado.',
-      );
-    }
-    if (!device) {
-      await this.usersService.registerDevice(user.id, dto.deviceId);
+    // Vigilantes no tienen restricción por dispositivo (no se registra deviceId al darlos de alta).
+    if (user.role !== UserRole.VIGILANCIA) {
+      const device = await this.usersService.getDeviceByUserId(user.id);
+      if (device && device.deviceId !== dto.deviceId) {
+        throw new ForbiddenException(
+          'Solo puedes iniciar sesión desde el dispositivo registrado.',
+        );
+      }
+      if (!device) {
+        await this.usersService.registerDevice(user.id, dto.deviceId);
+      }
     }
 
     const payload = {

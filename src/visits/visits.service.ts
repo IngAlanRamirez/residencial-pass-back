@@ -129,11 +129,27 @@ export class VisitsService {
     return this.toResponse(visit);
   }
 
+  /** Estado de escaneo para que el vigilante sepa si mostrar entrada o salida. */
+  async getScanStatus(visitId: string) {
+    const visit = await this.visitRepository.findOne({
+      where: { id: visitId },
+      select: { id: true, scannedByEntryId: true, scannedByExitId: true },
+    });
+    if (!visit) {
+      throw new NotFoundException('Visita no encontrada');
+    }
+    return {
+      entryScanned: !!visit.scannedByEntryId,
+      exitScanned: !!visit.scannedByExitId,
+    };
+  }
+
   /** Vigilante registra escaneo de entrada o salida. */
   async registerScan(
     visitId: string,
     vigilanteId: string,
     eventType: 'entry' | 'exit',
+    exitComment?: string,
   ) {
     const visit = await this.visitRepository.findOne({
       where: { id: visitId },
@@ -162,6 +178,7 @@ export class VisitsService {
       }
       visit.exitAt = new Date();
       visit.scannedByExitId = vigilanteId;
+      visit.exitComment = exitComment?.trim() || null;
       visit.status = VisitStatus.FINISHED;
     }
 
@@ -208,6 +225,7 @@ export class VisitsService {
       createdAt: visit.createdAt,
       scannedByEntryId: visit.scannedByEntryId ?? undefined,
       scannedByExitId: visit.scannedByExitId ?? undefined,
+      exitComment: visit.exitComment ?? undefined,
     };
   }
 }

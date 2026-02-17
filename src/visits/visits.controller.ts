@@ -30,6 +30,13 @@ export class VisitsController {
     return this.visitsService.create(userId, dto);
   }
 
+  /** Estado de escaneo (solo vigilante). Debe ir antes de GET :id para que /:id/scan-status no se matchee como id. */
+  @Get(':id/scan-status')
+  @Roles(UserRole.VIGILANCIA)
+  async getScanStatus(@Param('id') id: string) {
+    return this.visitsService.getScanStatus(id);
+  }
+
   @Get(':id')
   @Roles(UserRole.VECINO, UserRole.ADMIN)
   async findOne(
@@ -57,6 +64,6 @@ export class VisitsController {
     @CurrentUser('sub') vigilanteId: string,
     @Body() body: ScanVisitDto,
   ) {
-    return this.visitsService.registerScan(id, vigilanteId, body.eventType);
+    return this.visitsService.registerScan(id, vigilanteId, body.eventType, body.exitComment);
   }
 }
