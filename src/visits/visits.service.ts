@@ -79,18 +79,114 @@ export class VisitsService {
     return this.toResponse(saved);
   }
 
-  async findOne(visitId: string, userId: string, userRole: string) {
+  /** Lista según rol: vecino/admin = visitas que creó; vigilante = visitas que escaneó. */
+  async listByRole(userId: string, userRole: string) {
+    if (userRole === UserRole.VIGILANCIA) {
+      return this.findMyScannedVisits(userId);
+    }
+    return this.findMyCreatedVisits(userId);
+  }
+
+  /** Visitaciones creadas por el usuario (vecino o admin). */
+  async findMyCreatedVisits(userId: string) {
+    const visits = await this.visitRepository.find({
+      where: { createdById: userId },
+      order: { createdAt: 'DESC' },
+    });
+    return visits.map((v) => this.toResponse(v));
+  }
+
+  /** Visitaciones en las que el vigilante registró entrada o salida. */
+  async findMyScannedVisits(vigilanteId: string) {
+    const visits = await this.visitRepository
+      .createQueryBuilder('v')
+      .where('v.scanned_by_entry_id = :id OR v.scanned_by_exit_id = :id', {
+        id: vigilanteId,
+      })
+      .orderBy('v.entry_at', 'DESC', 'NULLS LAST')
+      .addOrderBy('v.exit_at', 'DESC', 'NULLS LAST')
+      .getMany();
+    return visits.map((v) => this.toResponse(v));
+  }
+
+  /** Detalle de una visita: solo el usuario que la creó puede verla (y recuperar QR). Visitaciones canceladas no pueden consultarse. */
+  async findOneForCreator(visitId: string, userId: string) {
     const visit = await this.visitRepository.findOne({
       where: { id: visitId },
     });
     if (!visit) {
       throw new NotFoundException('Visita no encontrada');
     }
-    const isOwner = visit.createdById === userId;
-    const isAdmin = userRole === UserRole.ADMIN;
-    if (!isOwner && !isAdmin) {
+    if (visit.createdById !== userId) {
       throw new ForbiddenException('No tiene permiso para ver esta visita');
     }
+    if (visit.status === VisitStatus.CANCELLED) {
+      throw new ForbiddenException('Esta visita fue cancelada y ya no puede consultarse');
+    }
+    if (visit.status === VisitStatus.FINISHED) {
+      throw new ForbiddenException('Esta visita ya finalizó y no puede consultarse el detalle');
+    }
+    return this.toResponse(visit);
+  }
+
+  /** Vigilante registra escaneo de entrada o salida. */
+  async registerScan(
+    visitId: string,
+    vigilanteId: string,
+    eventType: 'entry' | 'exit',
+  ) {
+    const visit = await this.visitRepository.findOne({
+      where: { id: visitId },
+    });
+    if (!visit) {
+      throw new NotFoundException('Visita no encontrada');
+    }
+
+    if (eventType === 'entry') {
+      if (visit.scannedByEntryId) {
+        throw new BadRequestException('La entrada de esta visita ya fue registrada');
+      }
+      if (visit.entryOpenSchedule) {
+        visit.entryAt = new Date();
+      }
+      visit.scannedByEntryId = vigilanteId;
+      visit.status = VisitStatus.USED;
+    } else {
+      if (visit.scannedByExitId) {
+        throw new BadRequestException('La salida de esta visita ya fue registrada');
+      }
+      if (!visit.scannedByEntryId) {
+        throw new BadRequestException(
+          'Debe registrar primero la entrada antes de la salida',
+        );
+      }
+      visit.exitAt = new Date();
+      visit.scannedByExitId = vigilanteId;
+      visit.status = VisitStatus.FINISHED;
+    }
+
+    await this.visitRepository.save(visit);
+    return this.toResponse(visit);
+  }
+
+  /** Cancelar visita: solo el creador, solo si está pendiente. */
+  async cancel(visitId: string, userId: string) {
+    const visit = await this.visitRepository.findOne({
+      where: { id: visitId },
+    });
+    if (!visit) {
+      throw new NotFoundException('Visita no encontrada');
+    }
+    if (visit.createdById !== userId) {
+      throw new ForbiddenException('No tiene permiso para cancelar esta visita');
+    }
+    if (visit.status !== VisitStatus.PENDING) {
+      throw new BadRequestException(
+        'Solo se pueden cancelar visitas pendientes',
+      );
+    }
+    visit.status = VisitStatus.CANCELLED;
+    await this.visitRepository.save(visit);
     return this.toResponse(visit);
   }
 
@@ -110,6 +206,8 @@ export class VisitsService {
       letter: visit.letter,
       status: visit.status,
       createdAt: visit.createdAt,
+      scannedByEntryId: visit.scannedByEntryId ?? undefined,
+      scannedByExitId: visit.scannedByExitId ?? undefined,
     };
   }
 }

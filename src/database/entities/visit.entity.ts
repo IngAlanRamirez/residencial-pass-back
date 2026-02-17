@@ -48,6 +48,12 @@ export class Visit {
   @Column({ name: 'created_by_id' })
   createdById: string;
 
+  @Column({ name: 'scanned_by_entry_id', type: 'uuid', nullable: true })
+  scannedByEntryId: string | null;
+
+  @Column({ name: 'scanned_by_exit_id', type: 'uuid', nullable: true })
+  scannedByExitId: string | null;
+
   @Column()
   street: string;
 
