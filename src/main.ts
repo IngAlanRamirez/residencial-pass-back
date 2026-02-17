@@ -27,6 +27,7 @@ const CAPACITOR_ORIGINS = [
   'https://localhost',
   'capacitor://localhost',
   'http://localhost',
+  'https://app.residencialpass.com',
 ];
 
 const DEV_ORIGINS = [
