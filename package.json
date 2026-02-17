@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
+    "setup:local": "cp .env.example .env.local && echo 'Creado .env.local. Ejecuta: docker compose up -d && npm run seed'"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

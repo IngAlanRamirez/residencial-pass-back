@@ -1,3 +1,19 @@
+import * as dotenv from 'dotenv';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
+// En desarrollo: usar SOLO .env.local (nunca .env de producción)
+// En producción: usar .env o variables de Railway
+const cwd = process.cwd();
+const envLocal = resolve(cwd, '.env.local');
+const envDefault = resolve(cwd, '.env');
+
+if (process.env.NODE_ENV !== 'production' && existsSync(envLocal)) {
+  dotenv.config({ path: envLocal });
+} else {
+  dotenv.config({ path: envDefault });
+}
+
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,

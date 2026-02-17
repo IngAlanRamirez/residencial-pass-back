@@ -1,8 +1,12 @@
 /**
  * Script para crear las calles por defecto.
  * Ejecutar: npm run seed
+ *
+ * Carga .env y luego .env.local (si existe) para desarrollo local.
  */
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+dotenv.config();
+dotenv.config({ path: '.env.local', override: true });
 import { DataSource } from 'typeorm';
 import {
   User,
