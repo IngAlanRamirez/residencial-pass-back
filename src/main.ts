@@ -11,8 +11,11 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : true;
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? true,
+    origin: corsOrigin,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
