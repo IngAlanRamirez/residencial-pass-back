@@ -39,14 +39,11 @@ const DEV_ORIGINS = [
   'http://app.residencialpass.com',
 ];
 
-function getCorsOrigin(): string[] | true {
+function buildAllowedOrigins(): Set<string> {
   const env = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
   const isProd = process.env.NODE_ENV === 'production';
-  if (isProd) {
-    const origins = [...new Set([...CAPACITOR_ORIGINS, ...env])];
-    return origins;
-  }
-  return [...new Set([...env, ...DEV_ORIGINS])];
+  const list = isProd ? [...CAPACITOR_ORIGINS, ...env] : [...DEV_ORIGINS, ...env];
+  return new Set(list);
 }
 
 async function bootstrap() {
@@ -54,9 +51,15 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
-  const corsOrigin = getCorsOrigin();
+  const allowedOrigins = buildAllowedOrigins();
   app.enableCors({
-    origin: corsOrigin,
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Origin ${origin} not allowed by CORS`), false);
+      }
+    },
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
