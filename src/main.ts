@@ -22,45 +22,13 @@ import {
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
-/** Orígenes que Capacitor usa en dispositivos nativos (siempre necesarios). */
-const CAPACITOR_ORIGINS = [
-  'https://localhost',
-  'capacitor://localhost',
-  'http://localhost',
-  'https://app.residencialpass.com',
-];
-
-const DEV_ORIGINS = [
-  ...CAPACITOR_ORIGINS,
-  'http://localhost:3000',
-  'http://localhost:4200',
-  'http://localhost:8100',
-  'http://localhost:8101',
-  'https://app.residencialpass.com',
-  'http://app.residencialpass.com',
-];
-
-function buildAllowedOrigins(): Set<string> {
-  const env = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
-  const isProd = process.env.NODE_ENV === 'production';
-  const list = isProd ? [...CAPACITOR_ORIGINS, ...env] : [...DEV_ORIGINS, ...env];
-  return new Set(list);
-}
-
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
-  const allowedOrigins = buildAllowedOrigins();
   app.enableCors({
-    origin: (origin, cb) => {
-      if (!origin || allowedOrigins.has(origin)) {
-        cb(null, true);
-      } else {
-        cb(new Error(`Origin ${origin} not allowed by CORS`), false);
-      }
-    },
+    origin: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
