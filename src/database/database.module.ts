@@ -7,6 +7,7 @@ import {
   RegistrationRequest,
   RecoveryRequest,
   Street,
+  Visit,
 } from './entities';
 
 @Module({
@@ -21,7 +22,7 @@ import {
           username: db?.username ?? 'residencial',
           password: db?.password ?? 'residencial',
           database: db?.database ?? 'residencial_pass',
-          entities: [User, Device, RegistrationRequest, RecoveryRequest, Street],
+          entities: [User, Device, RegistrationRequest, RecoveryRequest, Street, Visit],
           synchronize: process.env.NODE_ENV !== 'production',
           logging: process.env.NODE_ENV === 'development',
         };
@@ -34,6 +35,7 @@ import {
       RegistrationRequest,
       RecoveryRequest,
       Street,
+      Visit,
     ]),
   ],
   exports: [TypeOrmModule],

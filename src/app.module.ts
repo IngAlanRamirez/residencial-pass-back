@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RegistrationRequestsModule } from './registration-requests/registration-requests.module';
 import { StreetsModule } from './streets/streets.module';
+import { VisitsModule } from './visits/visits.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StreetsModule } from './streets/streets.module';
     NotificationsModule,
     RegistrationRequestsModule,
     StreetsModule,
+    VisitsModule,
   ],
   controllers: [],
   providers: [
