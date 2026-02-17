@@ -26,6 +26,11 @@ export class RegistrationRequestsController {
     return this.registrationRequestsService.findAllPending();
   }
 
+  @Get('history')
+  async findHistory() {
+    return this.registrationRequestsService.findAllProcessed();
+  }
+
   @Patch(':id')
   async updateStatus(
     @Param('id') id: string,

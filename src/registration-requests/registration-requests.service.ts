@@ -31,6 +31,31 @@ export class RegistrationRequestsService {
     }));
   }
 
+  async findAllProcessed() {
+    const rows = await this.registrationRequestRepository.find({
+      where: [
+        { status: RegistrationStatus.APPROVED },
+        { status: RegistrationStatus.REJECTED },
+      ],
+      relations: { user: true, validatedBy: true },
+      order: { updatedAt: 'DESC' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      street: r.street,
+      number: r.number,
+      letter: r.letter,
+      status: r.status,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      user: r.user ? { id: r.user.id, phone: r.user.phone } : null,
+      validatedBy: r.validatedBy
+        ? { id: r.validatedBy.id, phone: r.validatedBy.phone }
+        : null,
+    }));
+  }
+
   async updateStatus(
     id: string,
     status: RegistrationStatus.APPROVED | RegistrationStatus.REJECTED,
