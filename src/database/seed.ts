@@ -2,6 +2,7 @@
  * Script para crear las calles por defecto.
  * Ejecutar: npm run seed
  */
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import {
   User,
