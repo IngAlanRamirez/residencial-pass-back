@@ -15,6 +15,7 @@ import {
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
         const db = config.get('database');
+        const useSsl = db?.ssl === true;
         return {
           type: 'postgres',
           host: db?.host ?? 'localhost',
@@ -25,6 +26,7 @@ import {
           entities: [User, Device, RegistrationRequest, RecoveryRequest, Street, Visit],
           synchronize: process.env.NODE_ENV !== 'production',
           logging: process.env.NODE_ENV === 'development',
+          ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
         };
       },
       inject: [ConfigService],

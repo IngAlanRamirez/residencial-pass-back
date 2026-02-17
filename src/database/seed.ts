@@ -1,9 +1,8 @@
 /**
- * Script para crear el primer administrador y las calles por defecto en desarrollo.
+ * Script para crear las calles por defecto.
  * Ejecutar: npm run seed
  */
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import {
   User,
   Street,
@@ -11,10 +10,6 @@ import {
   RegistrationRequest,
   RecoveryRequest,
 } from './entities';
-import { UserRole, UserStatus } from '../common/enums';
-
-const phone = process.env.SEED_ADMIN_PHONE ?? '5550000000';
-const password = process.env.SEED_ADMIN_PASSWORD ?? 'admin123';
 
 const DEFAULT_STREETS = [
   'San Agustin Zhao Rong',
@@ -29,6 +24,7 @@ const DEFAULT_STREETS = [
 ];
 
 async function seed() {
+  const useSsl = process.env.DB_SSL === 'true';
   const dataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST ?? 'localhost',
@@ -37,37 +33,21 @@ async function seed() {
     password: process.env.DB_PASSWORD ?? 'residencial',
     database: process.env.DB_NAME ?? 'residencial_pass',
     entities: [User, Street, Device, RegistrationRequest, RecoveryRequest],
-    synchronize: true, // Crea las tablas si no existen (solo para dev/seed inicial)
+    synchronize: true,
+    ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
   });
 
   await dataSource.initialize();
-  const userRepo = dataSource.getRepository(User);
   const streetRepo = dataSource.getRepository(Street);
-
-  const existingAdmin = await userRepo.findOne({ where: { role: UserRole.ADMIN } });
-  if (!existingAdmin) {
-    const passwordHash = await bcrypt.hash(password, 10);
-    await userRepo.save(
-      userRepo.create({
-        phone,
-        passwordHash,
-        role: UserRole.ADMIN,
-        status: UserStatus.ACTIVE,
-      }),
-    );
-    console.log(`Administrador creado: teléfono ${phone}, contraseña ${password}`);
-  } else {
-    console.log('Ya existe un administrador. No se crea otro.');
-  }
 
   const existingStreets = await streetRepo.count();
   if (existingStreets === 0) {
     for (const name of DEFAULT_STREETS) {
       await streetRepo.save(streetRepo.create({ name }));
     }
-    console.log(`${DEFAULT_STREETS.length} streets created.`);
+    console.log(`${DEFAULT_STREETS.length} calles creadas.`);
   } else {
-    console.log('Streets already exist. Skipping default streets.');
+    console.log('Las calles ya existen. No se crean nuevas.');
   }
 
   await dataSource.destroy();

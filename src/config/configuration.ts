@@ -6,6 +6,7 @@ export default () => ({
     username: process.env.DB_USER ?? 'residencial',
     password: process.env.DB_PASSWORD ?? 'residencial',
     database: process.env.DB_NAME ?? 'residencial_pass',
+    ssl: process.env.DB_SSL === 'true',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',
