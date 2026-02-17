@@ -14,11 +14,21 @@ export class RegistrationRequestsService {
   ) {}
 
   async findAllPending() {
-    return this.registrationRequestRepository.find({
+    const rows = await this.registrationRequestRepository.find({
       where: { status: RegistrationStatus.PENDING },
       relations: { user: true },
       order: { createdAt: 'DESC' },
     });
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      street: r.street,
+      number: r.number,
+      letter: r.letter,
+      status: r.status,
+      createdAt: r.createdAt,
+      user: r.user ? { id: r.user.id, phone: r.user.phone } : null,
+    }));
   }
 
   async updateStatus(
@@ -49,12 +59,18 @@ export class RegistrationRequestsService {
       status: newUserStatus,
     });
 
+    const admin = await this.userRepository.findOne({
+      where: { id: adminId },
+      select: { id: true, phone: true },
+    });
+
     return {
       message:
         status === RegistrationStatus.APPROVED
           ? 'Solicitud aprobada. El vecino ya puede iniciar sesión.'
           : 'Solicitud rechazada.',
-      request,
+      validatedById: adminId,
+      validatedBy: admin ? { id: admin.id, phone: admin.phone } : null,
     };
   }
 }

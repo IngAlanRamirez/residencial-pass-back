@@ -12,7 +12,8 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? true, // true = cualquier origen (dev); en prod: "https://tuapp.com"
+    origin: process.env.CORS_ORIGIN ?? true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
   app.useGlobalPipes(

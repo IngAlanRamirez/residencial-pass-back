@@ -34,6 +34,7 @@ export class RegistrationRequest {
   })
   status: RegistrationStatus;
 
+  /** ID del usuario (admin) que aprobó o rechazó esta solicitud. */
   @Column({ name: 'validated_by_id', nullable: true })
   validatedById: string | null;
 
@@ -47,6 +48,7 @@ export class RegistrationRequest {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
+  /** Usuario (admin) que aprobó o rechazó esta solicitud. */
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'validated_by_id' })
   validatedBy: User | null;
