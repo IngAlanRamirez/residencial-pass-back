@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { User, Device, RegistrationRequest } from '../database/entities';
 import { UserRole, UserStatus } from '../common/enums';
 import { MeResponseDto } from './dto/me-response.dto';
+import { VigilanteListItemDto } from './dto/vigilante-list-item.dto';
 
 @Injectable()
 export class UsersService {
@@ -80,6 +81,31 @@ export class UsersService {
       status: UserStatus.ACTIVE,
     });
     return this.userRepository.save(user);
+  }
+
+  async findVigilantes(): Promise<VigilanteListItemDto[]> {
+    const users = await this.userRepository.find({
+      where: { role: UserRole.VIGILANCIA },
+      select: { id: true, phone: true, status: true, createdAt: true },
+      order: { createdAt: 'DESC' },
+    });
+    return users.map((u) => ({
+      id: u.id,
+      phone: u.phone,
+      status: u.status,
+      createdAt: u.createdAt.toISOString(),
+    }));
+  }
+
+  async deleteVigilante(vigilanteId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: vigilanteId, role: UserRole.VIGILANCIA },
+    });
+    if (!user) {
+      throw new NotFoundException('Vigilante no encontrado');
+    }
+    user.status = UserStatus.INACTIVE;
+    await this.userRepository.save(user);
   }
 
   async registerDevice(userId: string, deviceId: string): Promise<Device> {

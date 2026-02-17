@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateVigilanteDto } from './dto/create-vigilante.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -17,10 +17,24 @@ export class UsersController {
     return this.usersService.getProfile(userId);
   }
 
+  @Get('vigilantes')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async listVigilantes() {
+    return this.usersService.findVigilantes();
+  }
+
   @Post('vigilantes')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   async createVigilante(@Body() dto: CreateVigilanteDto) {
     return this.usersService.createVigilante(dto.phone, dto.password);
+  }
+
+  @Delete('vigilantes/:id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async deleteVigilante(@Param('id') id: string) {
+    await this.usersService.deleteVigilante(id);
   }
 }
