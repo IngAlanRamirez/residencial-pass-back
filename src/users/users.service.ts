@@ -1,9 +1,10 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User, Device } from '../database/entities';
+import { User, Device, RegistrationRequest } from '../database/entities';
 import { UserRole, UserStatus } from '../common/enums';
+import { MeResponseDto } from './dto/me-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,8 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Device)
     private readonly deviceRepository: Repository<Device>,
+    @InjectRepository(RegistrationRequest)
+    private readonly registrationRequestRepository: Repository<RegistrationRequest>,
   ) {}
 
   async findByPhone(phone: string): Promise<User | null> {
@@ -26,6 +29,36 @@ export class UsersService {
       where: { id },
       relations: { device: true },
     });
+  }
+
+  async getProfile(userId: string): Promise<MeResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { id: true, phone: true, role: true, status: true },
+    });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    const result: MeResponseDto = {
+      id: user.id,
+      phone: user.phone,
+      role: user.role,
+      status: user.status,
+    };
+    if (user.role === UserRole.VECINO || user.role === UserRole.ADMIN) {
+      const request = await this.registrationRequestRepository.findOne({
+        where: { userId },
+        select: { id: true, street: true, number: true, letter: true },
+      });
+      if (request) {
+        result.address = {
+          street: request.street,
+          number: request.number,
+          letter: request.letter ?? undefined,
+        };
+      }
+    }
+    return result;
   }
 
   async findAdmins(): Promise<User[]> {
