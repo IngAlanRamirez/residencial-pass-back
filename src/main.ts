@@ -22,14 +22,19 @@ import {
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
-const DEV_ORIGINS = [
+/** Orígenes que Capacitor usa en dispositivos nativos (siempre necesarios). */
+const CAPACITOR_ORIGINS = [
+  'https://localhost',
+  'capacitor://localhost',
   'http://localhost',
+];
+
+const DEV_ORIGINS = [
+  ...CAPACITOR_ORIGINS,
   'http://localhost:3000',
   'http://localhost:4200',
   'http://localhost:8100',
   'http://localhost:8101',
-  'https://localhost',
-  'capacitor://localhost',
   'https://app.residencialpass.com',
   'http://app.residencialpass.com',
 ];
@@ -37,7 +42,10 @@ const DEV_ORIGINS = [
 function getCorsOrigin(): string[] | true {
   const env = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
   const isProd = process.env.NODE_ENV === 'production';
-  if (isProd) return env.length > 0 ? env : true;
+  if (isProd) {
+    const origins = [...new Set([...CAPACITOR_ORIGINS, ...env])];
+    return origins;
+  }
   return [...new Set([...env, ...DEV_ORIGINS])];
 }
 
