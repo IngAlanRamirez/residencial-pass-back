@@ -3,9 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, Device, RegistrationRequest } from '../database/entities';
-import { UserRole, UserStatus } from '../common/enums';
+import { UserRole, UserStatus, RegistrationStatus } from '../common/enums';
 import { MeResponseDto } from './dto/me-response.dto';
 import { VigilanteListItemDto } from './dto/vigilante-list-item.dto';
+import { VecinoListItemDto } from './dto/vecino-list-item.dto';
 
 @Injectable()
 export class UsersService {
@@ -105,6 +106,50 @@ export class UsersService {
       throw new NotFoundException('Vigilante no encontrado');
     }
     user.status = UserStatus.INACTIVE;
+    await this.userRepository.save(user);
+  }
+
+  /** Lista vecinos aprobados (con domicilio registrado). Solo admin. */
+  async findVecinos(): Promise<VecinoListItemDto[]> {
+    const rows = await this.registrationRequestRepository.find({
+      where: { status: RegistrationStatus.APPROVED },
+      relations: { user: true },
+      order: { createdAt: 'DESC' },
+    });
+    return rows
+      .filter((r) => r.user?.role === UserRole.VECINO)
+      .map((r) => ({
+        id: r.user!.id,
+        phone: r.user!.phone,
+        status: r.user!.status,
+        street: r.street,
+        number: r.number,
+        letter: r.letter ?? null,
+        createdAt: r.user!.createdAt.toISOString(),
+      }));
+  }
+
+  /** Suspender vecino por falta de pago. Solo admin. */
+  async suspendVecino(vecinoId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: vecinoId, role: UserRole.VECINO },
+    });
+    if (!user) {
+      throw new NotFoundException('Vecino no encontrado');
+    }
+    user.status = UserStatus.INACTIVE;
+    await this.userRepository.save(user);
+  }
+
+  /** Reactivar vecino (p. ej. tras regularizar pago). Solo admin. */
+  async reactivateVecino(vecinoId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: vecinoId, role: UserRole.VECINO },
+    });
+    if (!user) {
+      throw new NotFoundException('Vecino no encontrado');
+    }
+    user.status = UserStatus.ACTIVE;
     await this.userRepository.save(user);
   }
 

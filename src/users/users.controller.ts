@@ -37,4 +37,25 @@ export class UsersController {
   async deleteVigilante(@Param('id') id: string) {
     await this.usersService.deleteVigilante(id);
   }
+
+  @Get('vecinos')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async listVecinos() {
+    return this.usersService.findVecinos();
+  }
+
+  @Post('vecinos/:id/suspend')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async suspendVecino(@Param('id') id: string) {
+    await this.usersService.suspendVecino(id);
+  }
+
+  @Post('vecinos/:id/reactivate')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async reactivateVecino(@Param('id') id: string) {
+    await this.usersService.reactivateVecino(id);
+  }
 }
