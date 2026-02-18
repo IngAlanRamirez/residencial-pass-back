@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, Device, RegistrationRequest } from '../database/entities';
 import { UserRole, UserStatus, RegistrationStatus } from '../common/enums';
@@ -153,10 +153,10 @@ export class UsersService {
     );
   }
 
-  /** Suspender vecino por falta de pago. Solo admin. */
+  /** Suspender vecino o admin por morosidad. Los admins también son vecinos y pueden suspenderse. */
   async suspendVecino(vecinoId: string): Promise<void> {
     const user = await this.userRepository.findOne({
-      where: { id: vecinoId, role: UserRole.VECINO },
+      where: { id: vecinoId, role: In([UserRole.VECINO, UserRole.ADMIN]) },
     });
     if (!user) {
       throw new NotFoundException('Vecino no encontrado');
@@ -165,10 +165,10 @@ export class UsersService {
     await this.userRepository.save(user);
   }
 
-  /** Reactivar vecino (p. ej. tras regularizar pago). Solo admin. */
+  /** Reactivar vecino o admin (p. ej. tras regularizar pago). */
   async reactivateVecino(vecinoId: string): Promise<void> {
     const user = await this.userRepository.findOne({
-      where: { id: vecinoId, role: UserRole.VECINO },
+      where: { id: vecinoId, role: In([UserRole.VECINO, UserRole.ADMIN]) },
     });
     if (!user) {
       throw new NotFoundException('Vecino no encontrado');
