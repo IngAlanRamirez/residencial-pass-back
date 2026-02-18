@@ -109,24 +109,48 @@ export class UsersService {
     await this.userRepository.save(user);
   }
 
-  /** Lista vecinos aprobados (con domicilio registrado). Solo admin. */
+  /** Lista vecinos y administradores aprobados (con domicilio). Incluye admins porque también son vecinos. */
   async findVecinos(): Promise<VecinoListItemDto[]> {
     const rows = await this.registrationRequestRepository.find({
       where: { status: RegistrationStatus.APPROVED },
       relations: { user: true },
       order: { createdAt: 'DESC' },
     });
-    return rows
-      .filter((r) => r.user?.role === UserRole.VECINO)
+    const fromRequests = rows
+      .filter((r) => r.user && (r.user.role === UserRole.VECINO || r.user.role === UserRole.ADMIN))
       .map((r) => ({
         id: r.user!.id,
         phone: r.user!.phone,
         status: r.user!.status,
+        role: r.user!.role as 'vecino' | 'admin',
         street: r.street,
         number: r.number,
         letter: r.letter ?? null,
         createdAt: r.user!.createdAt.toISOString(),
       }));
+
+    const idsFromRequests = new Set(fromRequests.map((v) => v.id));
+    const adminsWithoutRequest = await this.userRepository.find({
+      where: { role: UserRole.ADMIN },
+      select: { id: true, phone: true, status: true, createdAt: true },
+      order: { createdAt: 'DESC' },
+    });
+    const adminsToAdd = adminsWithoutRequest
+      .filter((a) => !idsFromRequests.has(a.id))
+      .map((a) => ({
+        id: a.id,
+        phone: a.phone,
+        status: a.status,
+        role: 'admin' as const,
+        street: '-',
+        number: '-',
+        letter: null as string | null,
+        createdAt: a.createdAt.toISOString(),
+      }));
+
+    return [...fromRequests, ...adminsToAdd].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   /** Suspender vecino por falta de pago. Solo admin. */

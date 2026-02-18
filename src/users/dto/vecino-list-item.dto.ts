@@ -4,6 +4,7 @@ export class VecinoListItemDto {
   id: string;
   phone: string;
   status: UserStatus;
+  role: 'vecino' | 'admin';
   street: string;
   number: string;
   letter?: string | null;
