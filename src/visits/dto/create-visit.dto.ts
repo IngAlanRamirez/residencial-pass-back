@@ -9,18 +9,13 @@ import {
   IsNotEmpty,
   ValidateIf,
 } from 'class-validator';
-import { VisitReason, IdentificationType } from '../../common/enums';
+import { VisitReason } from '../../common/enums';
 
 export class CreateVisitDto {
   @IsString()
   @IsNotEmpty({ message: 'El nombre del visitante es requerido' })
   @MaxLength(200, { message: 'El nombre no puede exceder 200 caracteres' })
   visitorName: string;
-
-  @IsEnum(IdentificationType, {
-    message: 'El medio de identificación debe ser INE, pasaporte o licencia',
-  })
-  identificationType: IdentificationType;
 
   @IsEnum(VisitReason, {
     message: 'El motivo debe ser visitante, proveedor, servicios u otros',

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { VisitsService } from './visits.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { ScanVisitDto } from './dto/scan-visit.dto';
@@ -33,7 +42,7 @@ export class VisitsController {
   /** Estado de escaneo (solo vigilante). Debe ir antes de GET :id para que /:id/scan-status no se matchee como id. */
   @Get(':id/scan-status')
   @Roles(UserRole.VIGILANCIA)
-  async getScanStatus(@Param('id') id: string) {
+  async getScanStatus(@Param('id', ParseUUIDPipe) id: string) {
     return this.visitsService.getScanStatus(id);
   }
 
@@ -60,10 +69,18 @@ export class VisitsController {
   @Post(':id/scan')
   @Roles(UserRole.VIGILANCIA)
   async registerScan(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('sub') vigilanteId: string,
     @Body() body: ScanVisitDto,
   ) {
-    return this.visitsService.registerScan(id, vigilanteId, body.eventType, body.exitComment);
+    return this.visitsService.registerScan(
+      id,
+      vigilanteId,
+      body.eventType,
+      body.identificationType,
+      body.hasVehicle,
+      body.licensePlate,
+      body.exitComment,
+    );
   }
 }

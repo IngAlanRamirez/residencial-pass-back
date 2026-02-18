@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Visit, RegistrationRequest } from '../database/entities';
-import { VisitReason, VisitStatus, UserRole } from '../common/enums';
+import { VisitReason, VisitStatus, UserRole, IdentificationType } from '../common/enums';
 import { CreateVisitDto } from './dto/create-visit.dto';
 
 @Injectable()
@@ -61,7 +61,9 @@ export class VisitsService {
 
     const visit = this.visitRepository.create({
       visitorName: dto.visitorName.trim(),
-      identificationType: dto.identificationType,
+      identificationType: null,
+      hasVehicle: false,
+      licensePlate: null,
       reason: dto.reason,
       entryOpenSchedule: dto.entryOpenSchedule,
       exitOpenSchedule: dto.exitOpenSchedule,
@@ -129,26 +131,44 @@ export class VisitsService {
     return this.toResponse(visit);
   }
 
-  /** Estado de escaneo para que el vigilante sepa si mostrar entrada o salida. */
+  /** Estado de escaneo para que el vigilante sepa si mostrar entrada o salida. Incluye domicilio y visitante. */
   async getScanStatus(visitId: string) {
     const visit = await this.visitRepository.findOne({
       where: { id: visitId },
-      select: { id: true, scannedByEntryId: true, scannedByExitId: true },
+      select: {
+        id: true,
+        visitorName: true,
+        reason: true,
+        description: true,
+        street: true,
+        number: true,
+        letter: true,
+        scannedByEntryId: true,
+        scannedByExitId: true,
+      },
     });
     if (!visit) {
       throw new NotFoundException('Visita no encontrada');
     }
+    const domicilio = [visit.street, visit.number, visit.letter].filter(Boolean).join(' ');
     return {
       entryScanned: !!visit.scannedByEntryId,
       exitScanned: !!visit.scannedByExitId,
+      visitorName: visit.visitorName,
+      domicilio,
+      reason: visit.reason,
+      description: visit.description?.trim() || null,
     };
   }
 
-  /** Vigilante registra escaneo de entrada o salida. */
+  /** Vigilante registra escaneo de entrada o salida. identificationType, hasVehicle y licensePlate se capturan al registrar entrada. */
   async registerScan(
     visitId: string,
     vigilanteId: string,
     eventType: 'entry' | 'exit',
+    identificationType?: string,
+    hasVehicle?: boolean,
+    licensePlate?: string,
     exitComment?: string,
   ) {
     const visit = await this.visitRepository.findOne({
@@ -162,9 +182,18 @@ export class VisitsService {
       if (visit.scannedByEntryId) {
         throw new BadRequestException('La entrada de esta visita ya fue registrada');
       }
+      if (!identificationType || !Object.values(IdentificationType).includes(identificationType as IdentificationType)) {
+        throw new BadRequestException('Debe indicar el medio de identificación (INE, pasaporte o licencia)');
+      }
+      if (hasVehicle && (!licensePlate || !licensePlate.trim())) {
+        throw new BadRequestException('Si entra con vehículo, debe indicar la placa');
+      }
       if (visit.entryOpenSchedule) {
         visit.entryAt = new Date();
       }
+      visit.identificationType = identificationType as IdentificationType;
+      visit.hasVehicle = !!hasVehicle;
+      visit.licensePlate = hasVehicle && licensePlate?.trim() ? licensePlate.trim() : null;
       visit.scannedByEntryId = vigilanteId;
       visit.status = VisitStatus.USED;
     } else {
@@ -226,6 +255,8 @@ export class VisitsService {
       scannedByEntryId: visit.scannedByEntryId ?? undefined,
       scannedByExitId: visit.scannedByExitId ?? undefined,
       exitComment: visit.exitComment ?? undefined,
+      hasVehicle: visit.hasVehicle,
+      licensePlate: visit.licensePlate ?? null,
     };
   }
 }

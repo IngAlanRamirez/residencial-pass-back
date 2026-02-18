@@ -21,8 +21,9 @@ export class Visit {
     name: 'identification_type',
     type: 'enum',
     enum: IdentificationType,
+    nullable: true,
   })
-  identificationType: IdentificationType;
+  identificationType: IdentificationType | null;
 
   @Column({
     type: 'enum',
@@ -56,6 +57,12 @@ export class Visit {
 
   @Column({ name: 'exit_comment', type: 'text', nullable: true })
   exitComment: string | null;
+
+  @Column({ name: 'has_vehicle', default: false })
+  hasVehicle: boolean;
+
+  @Column({ name: 'license_plate', type: 'varchar', nullable: true, length: 20 })
+  licensePlate: string | null;
 
   @Column()
   street: string;
