@@ -10,6 +10,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { RegistrationRequestsModule } from './registration-requests/registration-requests.module';
 import { StreetsModule } from './streets/streets.module';
 import { VisitsModule } from './visits/visits.module';
+import { LegalModule } from './legal/legal.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { VisitsModule } from './visits/visits.module';
     RegistrationRequestsModule,
     StreetsModule,
     VisitsModule,
+    LegalModule,
   ],
   controllers: [],
   providers: [
