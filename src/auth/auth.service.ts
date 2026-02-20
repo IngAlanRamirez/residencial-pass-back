@@ -121,8 +121,9 @@ export class AuthService {
       throw new UnauthorizedException('Teléfono o contraseña incorrectos');
     }
 
-    // Vigilantes no tienen restricción por dispositivo (no se registra deviceId al darlos de alta).
-    if (user.role !== UserRole.VIGILANCIA) {
+    // Usuario admin de prueba: no valida deviceId. Vigilantes tampoco.
+    const isTestAdmin = dto.phone === '5555555500';
+    if (!isTestAdmin && user.role !== UserRole.VIGILANCIA) {
       const device = await this.usersService.getDeviceByUserId(user.id);
       if (device && device.deviceId !== dto.deviceId) {
         throw new ForbiddenException(
