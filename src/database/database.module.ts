@@ -24,7 +24,9 @@ import {
           password: db?.password ?? 'residencial',
           database: db?.database ?? 'residencial_pass',
           entities: [User, Device, RegistrationRequest, RecoveryRequest, Street, Visit],
-          synchronize: process.env.NODE_ENV !== 'production',
+          synchronize:
+            process.env.FORCE_DB_SYNC === 'true' ||
+            process.env.NODE_ENV !== 'production',
           logging: process.env.NODE_ENV === 'development',
           ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
         };
